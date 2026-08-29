@@ -2,10 +2,171 @@
 /**
  * Главная страница. Первый экран и полоса с цифрами.
  *
+ * Без ACF PRO (без Repeater) списки хранятся как пронумерованные поля и
+ * собираются через mt_collect_rows()/mt_collect_pairs()/mt_collect_list()
+ * из functions.php. Поля лежат прямо на этой же странице (get_the_ID()) —
+ * отдельная служебная страница не нужна.
+ *
  * @package Methodic-Task
  */
 
 get_header();
+
+$settings_id = get_the_ID();
+
+// --- Белые списки иконок: из ACF приходит только ключ, произвольная разметка в шаблон не попадёт.
+$start_icons = array(
+	'phone'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"/></svg>',
+	'sparkles' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="m11 2.5 1.7 4.6 4.6 1.7-4.6 1.7L11 15.1 9.3 10.5 4.7 8.8l4.6-1.7L11 2.5Z"/><path fill="currentColor" d="m18.4 13.6.85 2.3 2.3.85-2.3.85-.85 2.3-.85-2.3-2.3-.85 2.3-.85.85-2.3Z"/><path fill="currentColor" d="m6.2 15.8.6 1.65 1.65.6-1.65.6-.6 1.65-.6-1.65-1.65-.6 1.65-.6.6-1.65Z"/></svg>',
+	'check'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm5.9 13.2 6.4-6.4-1.4-1.4-5 5-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg>',
+);
+
+// Иконки полосы с цифрами заданы в шаблоне по порядку (не в ACF — уникальные декоративные SVG).
+$stats_icons = array(
+	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>',
+	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
+	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg>',
+	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.13 4.32a.56.56 0 0 0 .42.3l4.77.7a.56.56 0 0 1 .31.95l-3.45 3.36a.56.56 0 0 0-.16.5l.81 4.75a.56.56 0 0 1-.81.59l-4.27-2.24a.56.56 0 0 0-.52 0l-4.27 2.24a.56.56 0 0 1-.81-.59l.82-4.75a.56.56 0 0 0-.17-.5L3.87 9.77a.56.56 0 0 1 .31-.95l4.77-.7a.56.56 0 0 0 .42-.3Z"/></svg>',
+);
+
+$arrow = '<svg class="btn__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
+
+$contacts_icons = array(
+	'max'      => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.13" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6"/><path d="M5.8 8h4.4"/></svg>',
+	'telegram' => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.13" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.5 2 1.8 6.9l3.5 1.3 1.3 3.6 2-2.6 3.1 2.3z"/><path d="m5.3 8.2 7-4.6"/></svg>',
+);
+
+// --- Данные страницы из ACF.
+$hero_title          = get_field( 'hero_title', $settings_id );
+$hero_lead           = get_field( 'hero_lead', $settings_id );
+$hero_choose         = get_field( 'hero_choose', $settings_id );
+$hero_image          = get_field( 'hero_image', $settings_id );
+$hero_card_applicant = mt_group_field( 'hero_card_applicant', $settings_id, array(
+	'eyebrow'                => 'Иностранным гражданам',
+	'title'                  => 'Оформляю статус себе или семье',
+	'desc'                   => '',
+	'button_primary_text'    => 'Бесплатная консультация',
+	'button_primary_url'     => '#',
+	'button_secondary_text'  => 'Смотреть услуги и цены',
+	'button_secondary_url'   => '#',
+) );
+
+$hero_card_employer = mt_group_field( 'hero_card_employer', $settings_id, array(
+	'eyebrow'                => 'Работодателям',
+	'title'                  => 'Оформляю иностранных сотрудников',
+	'desc'                   => '',
+	'button_solution_text'   => 'Решение для работодателей',
+	'button_solution_url'    => '#',
+	'button_primary_text'    => 'Бесплатная консультация',
+	'button_primary_url'     => '#',
+	'button_secondary_text'  => 'Смотреть услуги и цены',
+	'button_secondary_url'   => '#',
+) );
+$hero_info_lines     = array(
+	array( 'line' => get_field( 'hero_info_line_1', $settings_id ) ),
+	array( 'line' => get_field( 'hero_info_line_2', $settings_id ) ),
+);
+
+$stats_items = mt_collect_pairs( 'stats', $settings_id, 4, 'value', 'label' );
+
+$start_title    = get_field( 'start_title', $settings_id );
+$start_subtitle = get_field( 'start_subtitle', $settings_id );
+$start_cards    = mt_collect_rows( 'start_card', $settings_id, 3, array( 'icon', 'title', 'text', 'button_text', 'button_url', 'wide' ) );
+
+$services_title    = get_field( 'services_title', $settings_id );
+$services_subtitle = get_field( 'services_subtitle', $settings_id );
+$services_image    = get_field( 'services_image', $settings_id );
+$services_items    = mt_collect_rows( 'service', $settings_id, 3, array( 'title', 'text', 'price', 'button_text', 'button_url' ) );
+$services_link     = mt_group_field( 'services_link', $settings_id, array( 'title' => 'Все услуги', 'url' => '#' ) );
+$services_note     = get_field( 'services_note', $settings_id );
+
+$process_title    = get_field( 'process_title', $settings_id );
+$process_subtitle = get_field( 'process_subtitle', $settings_id );
+$process_steps    = mt_collect_rows( 'process_step', $settings_id, 4, array( 'title', 'text' ) );
+$process_note     = get_field( 'process_note', $settings_id );
+
+$trust_title    = get_field( 'trust_title', $settings_id );
+$trust_subtitle = get_field( 'trust_subtitle', $settings_id );
+$trust_image    = get_field( 'trust_image', $settings_id );
+$trust_rating = mt_group_field( 'trust_rating', $settings_id, array(
+	'value'     => '4,8',
+	'text'      => '',
+	'link_text' => 'Читать отзывы',
+	'link_url'  => '#',
+) );
+
+$trust_cases_group = mt_group_field( 'trust_cases', $settings_id, array( 'title' => 'Примеры дел' ) );
+$trust_cases        = array(
+	'title' => $trust_cases_group['title'],
+	'items' => array(),
+);
+for ( $i = 1; $i <= 3; $i++ ) {
+	if ( ! empty( $trust_cases_group[ "case_{$i}_text" ] ) ) {
+		$trust_cases['items'][] = array(
+			'text' => $trust_cases_group[ "case_{$i}_text" ],
+			'url'  => $trust_cases_group[ "case_{$i}_url" ] ?? '#',
+		);
+	}
+}
+
+$trust_team = mt_group_field( 'trust_team', $settings_id, array(
+	'title'     => 'Команда, которую видно',
+	'text'      => '',
+	'link_text' => 'Познакомиться с командой',
+	'link_url'  => '#',
+) );
+
+$reviews_title    = get_field( 'reviews_title', $settings_id );
+$reviews_subtitle = get_field( 'reviews_subtitle', $settings_id );
+$reviews_widgets  = mt_collect_rows( 'review', $settings_id, 2, array( 'name', 'score', 'image' ) );
+
+$kb_title    = get_field( 'kb_title', $settings_id );
+$kb_subtitle = get_field( 'kb_subtitle', $settings_id );
+$kb_items    = mt_collect_rows( 'kb_item', $settings_id, 3, array( 'title', 'text', 'url', 'featured' ) );
+
+$gov_title    = get_field( 'gov_title', $settings_id );
+$gov_subtitle = get_field( 'gov_subtitle', $settings_id );
+$gov_links    = mt_collect_rows( 'gov_link', $settings_id, 8, array( 'title', 'url', 'target' ) );
+
+$faq_title    = get_field( 'faq_title', $settings_id );
+$faq_subtitle = get_field( 'faq_subtitle', $settings_id );
+$faq_items    = mt_collect_pairs( 'faq_item', $settings_id, 8, 'question', 'answer' );
+$faq_more     = mt_group_field( 'faq_more', $settings_id, array( 'title' => 'Все вопросы и ответы', 'url' => '#' ) );
+
+$cta_title       = get_field( 'cta_title', $settings_id );
+$cta_lead        = get_field( 'cta_lead', $settings_id );
+$cta_submit      = get_field( 'cta_submit', $settings_id );
+$cta_consent_url = get_field( 'cta_consent_url', $settings_id );
+$cta_note        = get_field( 'cta_note', $settings_id );
+$cta_image       = get_field( 'cta_image', $settings_id );
+
+$contacts_title    = get_field( 'contacts_title', $settings_id );
+$contacts_subtitle = get_field( 'contacts_subtitle', $settings_id );
+
+$contacts_phone_group = mt_group_field( 'contacts_phone', $settings_id, array(
+	'title'  => 'Телефон и мессенджеры',
+	'hours'  => 'Пн–Пт, 09:00–18:00',
+	'number' => '',
+	'tel'    => '',
+) );
+$contacts_phone       = array(
+	'title'  => $contacts_phone_group['title'],
+	'hours'  => $contacts_phone_group['hours'],
+	'number' => $contacts_phone_group['number'],
+	'tel'    => $contacts_phone_group['tel'],
+	'chips'  => array(),
+);
+for ( $i = 1; $i <= 2; $i++ ) {
+	if ( ! empty( $contacts_phone_group[ "chip_{$i}_label" ] ) ) {
+		$contacts_phone['chips'][] = array(
+			'label' => $contacts_phone_group[ "chip_{$i}_label" ],
+			'url'   => $contacts_phone_group[ "chip_{$i}_url" ],
+			'icon'  => $contacts_phone_group[ "chip_{$i}_icon" ],
+		);
+	}
+}
+
+$contacts_offices = mt_collect_rows( 'office', $settings_id, 2, array( 'tab', 'name', 'address', 'hours', 'route', 'route_url', 'map_embed' ) );
 ?>
 
 <main class="site-main">
@@ -14,55 +175,60 @@ get_header();
 		<div class="hero__inner">
 
 			<div class="hero__intro">
-				<h1 class="hero__title">Миграционные услуги <br class="hero__br">в Москве и Московской области</h1>
-				<p class="hero__lead">РВП, ВНЖ, гражданство РФ: собираем полный пакет документов и ведём дело до результата. Компаниями — легальное оформление иностранных сотрудников.</p>
-				<p class="hero__choose">Выберите свой путь.</p>
+				<h1 class="hero__title"><?php echo nl2br( esc_html( $hero_title ) ); ?></h1>
+				<p class="hero__lead"><?php echo esc_html( $hero_lead ); ?></p>
+				<p class="hero__choose"><?php echo esc_html( $hero_choose ); ?></p>
 			</div>
 
-			<img class="hero__pic" src="<?php echo esc_url( get_template_directory_uri() . '/assets/images/hero-background.png' ); ?>" alt="" width="802" height="534">
+			<?php if ( $hero_image ) : ?>
+				<img class="hero__pic" src="<?php echo esc_url( $hero_image ); ?>" alt="" width="802" height="534">
+			<?php endif; ?>
 
 			<div class="hero__content">
 				<div class="hero__cards">
 
 					<article class="hero-card">
 						<div class="hero-card__body">
-							<p class="hero-card__eyebrow">Иностранным гражданам</p>
+							<p class="hero-card__eyebrow"><?php echo esc_html( $hero_card_applicant['eyebrow'] ); ?></p>
 							<div class="hero-card__text">
-								<h2 class="hero-card__title">Оформляю статус себе или семье</h2>
-								<p class="hero-card__desc">РВП, ВНЖ, гражданство РФ. Проверим основание, соберём документы, подадим без ошибок. Не знаете, с чего начать — начните с консультации.</p>
+								<h2 class="hero-card__title"><?php echo esc_html( $hero_card_applicant['title'] ); ?></h2>
+								<p class="hero-card__desc"><?php echo esc_html( $hero_card_applicant['desc'] ); ?></p>
 							</div>
 						</div>
 						<div class="hero-card__buttons">
-							<a class="btn btn--primary" href="#">Бесплатная консультация</a>
-							<a class="btn btn--outline" href="#">Смотреть услуги и цены</a>
+							<a class="btn btn--primary" href="<?php echo esc_url( $hero_card_applicant['button_primary_url'] ); ?>"><?php echo esc_html( $hero_card_applicant['button_primary_text'] ); ?></a>
+							<a class="btn btn--outline" href="<?php echo esc_url( $hero_card_applicant['button_secondary_url'] ); ?>"><?php echo esc_html( $hero_card_applicant['button_secondary_text'] ); ?></a>
 						</div>
 					</article>
 
 					<article class="hero-card">
 						<div class="hero-card__body">
-							<p class="hero-card__eyebrow">Работодателям</p>
+							<p class="hero-card__eyebrow"><?php echo esc_html( $hero_card_employer['eyebrow'] ); ?></p>
 							<div class="hero-card__text">
-								<h2 class="hero-card__title">Оформляю иностранных сотрудников</h2>
-								<p class="hero-card__desc">Разрешения на работу, ВКС, кадровые уведомления в МВД. Более 10 лет в миграционном праве, работаем с компаниями Москвы и области.</p>
+								<h2 class="hero-card__title"><?php echo esc_html( $hero_card_employer['title'] ); ?></h2>
+								<p class="hero-card__desc"><?php echo esc_html( $hero_card_employer['desc'] ); ?></p>
 							</div>
 						</div>
 						<div class="hero-card__buttons">
-							<a class="btn btn--primary hero-card__solution" href="#">
-								Решение для работодателей
+							<a class="btn btn--primary hero-card__solution" href="<?php echo esc_url( $hero_card_employer['button_solution_url'] ); ?>">
+								<?php echo esc_html( $hero_card_employer['button_solution_text'] ); ?>
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
 									<path d="M16.9807 15.481L16.9807 7.08019L8.45875 7.08031M16.9807 7.08019L7.08125 16.9797" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
 							</a>
-							<a class="btn btn--primary hero-card__extra" href="#">Бесплатная консультация</a>
-							<a class="btn btn--outline hero-card__extra" href="#">Смотреть услуги и цены</a>
+							<a class="btn btn--primary hero-card__extra" href="<?php echo esc_url( $hero_card_employer['button_primary_url'] ); ?>"><?php echo esc_html( $hero_card_employer['button_primary_text'] ); ?></a>
+							<a class="btn btn--outline hero-card__extra" href="<?php echo esc_url( $hero_card_employer['button_secondary_url'] ); ?>"><?php echo esc_html( $hero_card_employer['button_secondary_text'] ); ?></a>
 						</div>
 					</article>
 
 				</div>
 
 				<aside class="hero-info">
-					<p class="hero-info__line">Офисы в Подольске и Одинцово</p>
-					<p class="hero-info__line">Работаем по Москве и Московской области</p>
+					<?php foreach ( $hero_info_lines as $row ) : ?>
+						<?php if ( '' !== (string) $row['line'] ) : ?>
+							<p class="hero-info__line"><?php echo esc_html( $row['line'] ); ?></p>
+						<?php endif; ?>
+					<?php endforeach; ?>
 				</aside>
 			</div>
 
@@ -71,113 +237,18 @@ get_header();
 
 	<section class="stats">
 		<ul class="stats__list">
-
-			<li class="stats__item">
-				<span class="stats__icon">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-						<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/>
-						<path d="m9 12 2 2 4-4"/>
-					</svg>
-				</span>
-				<div class="stats__body">
-					<p class="stats__value">Более 10 лет</p>
-					<p class="stats__label">помогаем с миграционными документами</p>
-				</div>
-			</li>
-
-			<li class="stats__item">
-				<span class="stats__icon">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-						<rect x="8" y="2" width="8" height="4" rx="1"/>
-						<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-						<path d="m9 14 2 2 4-4"/>
-					</svg>
-				</span>
-				<div class="stats__body">
-					<p class="stats__value">6&nbsp;000+</p>
-					<p class="stats__label">оформлений по РВП, ВНЖ и гражданству</p>
-				</div>
-			</li>
-
-			<li class="stats__item">
-				<span class="stats__icon">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-						<rect x="4" y="2" width="16" height="20" rx="2"/>
-						<path d="M9 22v-4h6v4"/>
-						<path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>
-					</svg>
-				</span>
-				<div class="stats__body">
-					<p class="stats__value">2 офиса</p>
-					<p class="stats__label">Подольск и Одинцово: приём рядом с домом, без поездки в центр</p>
-				</div>
-			</li>
-
-			<li class="stats__item">
-				<span class="stats__icon">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-						<path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.13 4.32a.56.56 0 0 0 .42.3l4.77.7a.56.56 0 0 1 .31.95l-3.45 3.36a.56.56 0 0 0-.16.5l.81 4.75a.56.56 0 0 1-.81.59l-4.27-2.24a.56.56 0 0 0-.52 0l-4.27 2.24a.56.56 0 0 1-.81-.59l.82-4.75a.56.56 0 0 0-.17-.5L3.87 9.77a.56.56 0 0 1 .31-.95l4.77-.7a.56.56 0 0 0 .42-.3Z"/>
-					</svg>
-				</span>
-				<div class="stats__body">
-					<p class="stats__value">4,8</p>
-					<p class="stats__label">рейтинг на Яндекс.Картах и 2ГИС</p>
-				</div>
-			</li>
-
+			<?php foreach ( $stats_items as $i => $item ) : ?>
+				<li class="stats__item">
+					<span class="stats__icon"><?php echo $stats_icons[ $i ] ?? $stats_icons[0]; ?></span>
+					<div class="stats__body">
+						<p class="stats__value"><?php echo esc_html( $item['value'] ); ?></p>
+						<p class="stats__label"><?php echo esc_html( $item['label'] ); ?></p>
+					</div>
+				</li>
+			<?php endforeach; ?>
 		</ul>
 	</section>
 
-	<?php
-	/*
-	 * Контент блока вынесен в переменные — это точка подключения ACF.
-	 * Когда поля появятся, здесь останется только заменить три присваивания:
-	 *   $start_title    = get_field( 'start_title' );
-	 *   $start_subtitle = get_field( 'start_subtitle' );
-	 *   $start_cards    = get_field( 'start_cards' ); // репитер с теми же ключами
-	 * Разметка ниже не меняется.
-	 */
-	$start_title    = 'С чего начать прямо сейчас';
-	$start_subtitle = 'Выберите удобный способ разобраться в своей ситуации';
-
-	$start_cards = array(
-		array(
-			'icon'        => 'phone',
-			'title'       => 'Бесплатная консультация',
-			'text'        => 'Юрист разберёт вашу ситуацию: какое основание подходит, какие документы нужны и в каком порядке действовать. В чате или по видео, можно анонимно.',
-			'button_text' => 'Записаться',
-			'button_url'  => '#',
-			'wide'        => true,
-		),
-		array(
-			'icon'        => 'sparkles',
-			'title'       => 'ИИ-юрист',
-			'text'        => 'Ответ на миграционный вопрос за минуту — бесплатно и в любое время суток.',
-			'button_text' => 'Открыть чат',
-			'button_url'  => '#',
-			'wide'        => false,
-		),
-		array(
-			'icon'        => 'check',
-			'title'       => 'Тест за 2 минуты',
-			'text'        => 'Подберём подходящее вам основание и пришлём пошаговый план действий.',
-			'button_text' => 'Пройти тест',
-			'button_url'  => '#',
-			'wide'        => false,
-		),
-	);
-
-	/*
-	 * Белый список иконок: из ACF придёт только ключ, произвольная разметка
-	 * в шаблон не попадёт. Значения — наши собственные строки, поэтому
-	 * выводятся без экранирования.
-	 */
-	$start_icons = array(
-		'phone'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"/></svg>',
-		'sparkles' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="m11 2.5 1.7 4.6 4.6 1.7-4.6 1.7L11 15.1 9.3 10.5 4.7 8.8l4.6-1.7L11 2.5Z"/><path fill="currentColor" d="m18.4 13.6.85 2.3 2.3.85-2.3.85-.85 2.3-.85-2.3-2.3-.85 2.3-.85.85-2.3Z"/><path fill="currentColor" d="m6.2 15.8.6 1.65 1.65.6-1.65.6-.6 1.65-.6-1.65-1.65-.6 1.65-.6.6-1.65Z"/></svg>',
-		'check'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm5.9 13.2 6.4-6.4-1.4-1.4-5 5-2.4-2.4-1.4 1.4 3.8 3.8Z"/></svg>',
-	);
-	?>
 	<section class="start">
 		<div class="start__inner">
 
@@ -212,53 +283,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF — как и в третьем блоке, меняются только присваивания:
-	 *   $services_title    = get_field( 'services_title' );
-	 *   $services_subtitle = get_field( 'services_subtitle' );
-	 *   $services_pic      = get_field( 'services_image' );  // поле «Изображение», вернуть URL
-	 *   $services_items    = get_field( 'services_items' );  // репитер с теми же ключами
-	 *   $services_link     = get_field( 'services_link' );   // поле «Ссылка»
-	 *   $services_note     = get_field( 'services_note' );
-	 */
-	$services_title    = 'Услуги для иностранных граждан';
-	$services_subtitle = 'Выберите свой статус. В карточке — что входит и от какой суммы, полный прайс — на странице услуги.';
-	$services_pic      = get_template_directory_uri() . '/assets/images/services.png';
-
-	$services_items = array(
-		array(
-			'title'       => 'РВП',
-			'text'        => 'По квоте, браку, детям и другим основаниям. Проверим право на подачу до сбора документов.',
-			'price'       => 'от 14 000 ₽',
-			'button_text' => 'Подробнее',
-			'button_url'  => '#',
-		),
-		array(
-			'title'       => 'ВНЖ',
-			'text'        => 'Документы, экзамен, подтверждение дохода, подача и контроль этапов.',
-			'price'       => 'от 14 000 ₽',
-			'button_text' => 'Подробнее',
-			'button_url'  => '#',
-		),
-		array(
-			'title'       => 'Гражданство РФ',
-			'text'        => 'Общий и упрощённый порядок, по браку, детям, указ № 11. Подберём основание и подготовим пакет.',
-			'price'       => 'от 14 000 ₽',
-			'button_text' => 'Подробнее',
-			'button_url'  => '#',
-		),
-	);
-
-	$services_link = array(
-		'text' => 'Все услуги',
-		'url'  => '#',
-	);
-	$services_note = 'квота на РВП, разрешение на работу, временное убежище, репатриация, обжалование запрета и депортации';
-
-	// Стрелка повторяется у каждой кнопки блока — держим одной строкой.
-	$services_arrow = '<svg class="btn__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
-	?>
 	<section class="services">
 		<div class="services__inner">
 
@@ -267,7 +291,9 @@ get_header();
 					<h2 class="services__title"><?php echo esc_html( $services_title ); ?></h2>
 					<p class="services__subtitle"><?php echo esc_html( $services_subtitle ); ?></p>
 				</div>
-				<img class="services__pic" src="<?php echo esc_url( $services_pic ); ?>" alt="" width="687" height="290">
+				<?php if ( $services_image ) : ?>
+					<img class="services__pic" src="<?php echo esc_url( $services_image ); ?>" alt="" width="687" height="290">
+				<?php endif; ?>
 			</div>
 
 			<div class="services__content">
@@ -282,7 +308,7 @@ get_header();
 								<p class="services-card__price"><?php echo esc_html( $item['price'] ); ?></p>
 								<a class="btn btn--primary" href="<?php echo esc_url( $item['button_url'] ); ?>">
 									<span><?php echo esc_html( $item['button_text'] ); ?></span>
-									<?php echo $services_arrow; ?>
+									<?php echo $arrow; ?>
 								</a>
 							</div>
 						</li>
@@ -291,8 +317,8 @@ get_header();
 
 				<div class="services__info">
 					<a class="btn btn--link" href="<?php echo esc_url( $services_link['url'] ); ?>">
-						<span><?php echo esc_html( $services_link['text'] ); ?></span>
-						<?php echo $services_arrow; ?>
+						<span><?php echo esc_html( $services_link['title'] ); ?></span>
+						<?php echo $arrow; ?>
 					</a>
 					<span class="services__note"><?php echo esc_html( $services_note ); ?></span>
 				</div>
@@ -301,40 +327,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF:
-	 *   $process_title    = get_field( 'process_title' );
-	 *   $process_subtitle = get_field( 'process_subtitle' );
-	 *   $process_steps    = get_field( 'process_steps' );  // репитер: title + text
-	 *   $process_note     = get_field( 'process_note' );
-	 * Номера шагов не хранятся — их даёт порядок в списке, чтобы редактору
-	 * не приходилось перенумеровывать карточки вручную.
-	 */
-	$process_title    = 'Как мы работаем';
-	$process_subtitle = 'Понятный порядок: вы всегда знаете, на каком этапе находитесь.';
-
-	$process_steps = array(
-		array(
-			'title' => 'Бесплатная консультация',
-			'text'  => 'Разбираем ситуацию и определяем основание, по которому вам подходит подача.',
-		),
-		array(
-			'title' => 'Договор с фиксированной ценой',
-			'text'  => 'Стоимость и состав работ фиксируются в договоре и не меняются по ходу дела.',
-		),
-		array(
-			'title' => 'Подготовка документов',
-			'text'  => 'Собираем и проверяем каждую справку и заявление, чтобы не получить отказ из-за формальной ошибки. Типовой срок подготовки пакета — 7 дней.',
-		),
-		array(
-			'title' => 'Подача и сопровождение',
-			'text'  => 'Сопровождаем на этапах подачи, отслеживаем статус заявления и консультируем до получения статуса.',
-		),
-	);
-
-	$process_note = 'Оплата 50/50: половина при заключении договора, половина — по готовности пакета документов. Цена зафиксирована в договоре и не растёт по ходу дела.';
-	?>
 	<section class="process">
 		<div class="process__inner">
 
@@ -365,44 +357,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF. Три карточки устроены по-разному, поэтому это
-	 * не репитер, а три группы полей:
-	 *   $trust_title/$trust_subtitle/$trust_pic — обычные поля секции;
-	 *   $trust_rating — группа: value, text, link_text, link_url;
-	 *   $trust_cases  — группа: title + репитер items (text, url);
-	 *   $trust_team   — группа: title, text, link_text, link_url.
-	 */
-	$trust_title    = 'Почему нам доверяют';
-	$trust_subtitle = 'Конкретные дела и живые отзывы вместо общений «результат 100%».';
-	$trust_pic      = get_template_directory_uri() . '/assets/images/trust.png';
-
-	$trust_rating = array(
-		'value'     => '4,8',
-		'text'      => 'Оценка клиентов на Яндекс.Картах и 2ГИС по двум офисам.',
-		'link_text' => 'Читать отзывы',
-		'link_url'  => '#',
-	);
-
-	$trust_cases = array(
-		'title' => 'Примеры дел',
-		'items' => array(
-			array( 'text' => 'Гражданство по браку — 7 месяцев', 'url' => '#' ),
-			array( 'text' => 'ВНЖ после РВП — 3 месяца', 'url' => '#' ),
-			array( 'text' => 'Снятие запрета на въезд — 5 месяцев', 'url' => '#' ),
-		),
-	);
-
-	$trust_team = array(
-		'title'     => 'Команда, которую видно',
-		'text'      => 'Имя Фамилия — ведущий юрист по гражданству, опыт 12 лет. Юристы по РВП, ВНЖ, гражданству, ВКС и судебной защите — с именами и специализацией. Средний опыт специалиста — 8 лет.',
-		'link_text' => 'Познакомиться с командой',
-		'link_url'  => '#',
-	);
-
-	$trust_arrow = '<svg class="btn__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>';
-	?>
 	<section class="trust">
 		<div class="trust__inner">
 
@@ -411,7 +365,9 @@ get_header();
 					<h2 class="trust__title"><?php echo esc_html( $trust_title ); ?></h2>
 					<p class="trust__subtitle"><?php echo esc_html( $trust_subtitle ); ?></p>
 				</div>
-				<img class="trust__pic" src="<?php echo esc_url( $trust_pic ); ?>" alt="" width="807" height="346">
+				<?php if ( $trust_image ) : ?>
+					<img class="trust__pic" src="<?php echo esc_url( $trust_image ); ?>" alt="" width="807" height="346">
+				<?php endif; ?>
 			</div>
 
 			<ul class="trust__list">
@@ -423,7 +379,7 @@ get_header();
 					</div>
 					<a class="btn btn--link" href="<?php echo esc_url( $trust_rating['link_url'] ); ?>">
 						<span><?php echo esc_html( $trust_rating['link_text'] ); ?></span>
-						<?php echo $trust_arrow; ?>
+						<?php echo $arrow; ?>
 					</a>
 				</li>
 
@@ -455,7 +411,7 @@ get_header();
 					</div>
 					<a class="btn btn--link" href="<?php echo esc_url( $trust_team['link_url'] ); ?>">
 						<span><?php echo esc_html( $trust_team['link_text'] ); ?></span>
-						<?php echo $trust_arrow; ?>
+						<?php echo $arrow; ?>
 					</a>
 				</li>
 
@@ -464,58 +420,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF:
-	 *   $reviews_title / $reviews_subtitle — поля секции;
-	 *   $reviews_widgets — репитер: name, score, image (поле «Изображение», URL).
-	 */
-	$reviews_title    = 'Отзывы клиентов';
-	$reviews_subtitle = 'Оценки собраны на публичных площадках — их нельзя отредактировать на нашей стороне.';
-
-	$reviews_widgets = array(
-		array(
-			'name'  => 'Яндекс.Карты',
-			'score' => '4,8',
-			'image' => get_template_directory_uri() . '/assets/images/review-yandex.png',
-		),
-		array(
-			'name'  => '2ГИС',
-			'score' => '4,8',
-			'image' => get_template_directory_uri() . '/assets/images/review-2gis.png',
-		),
-	);
-
-	/*
-	 *   $kb_title / $kb_subtitle — поля секции;
-	 *   $kb_items — репитер: title, text, url, featured (галочка «выделить цветом»).
-	 */
-	$kb_title    = 'База знаний';
-	$kb_subtitle = 'Разбираетесь самостоятельно? Собрали пошаговые материалы по статусам.';
-
-	$kb_items = array(
-		array(
-			'title'    => 'Как получить РВП: пошаговый гид',
-			'text'     => 'Основания, документы, типичные ошибки',
-			'url'      => '#',
-			'featured' => false,
-		),
-		array(
-			'title'    => 'ВНЖ после РВП: что важно не пропустить',
-			'text'     => 'Сроки, уведомления, подготовка пакета',
-			'url'      => '#',
-			'featured' => true,
-		),
-		array(
-			'title'    => 'Гражданство РФ: с чего начать в 2026',
-			'text'     => 'Основания, сроки и порядок подачи',
-			'url'      => '#',
-			'featured' => false,
-		),
-	);
-
-	$kb_arrow = '<span class="kb-card__arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg></span>';
-	?>
 	<section class="reviews">
 		<div class="reviews__inner">
 
@@ -531,8 +435,10 @@ get_header();
 							<span class="review-widget__name"><?php echo esc_html( $widget['name'] ); ?></span>
 							<span class="review-widget__score"><?php echo esc_html( $widget['score'] ); ?></span>
 						</div>
-						<img class="review-widget__shot" src="<?php echo esc_url( $widget['image'] ); ?>" width="723" height="318"
-							alt="<?php echo esc_attr( sprintf( 'Отзывы на площадке %1$s, рейтинг %2$s', $widget['name'], $widget['score'] ) ); ?>">
+						<?php if ( ! empty( $widget['image'] ) ) : ?>
+							<img class="review-widget__shot" src="<?php echo esc_url( $widget['image'] ); ?>" width="723" height="318"
+								alt="<?php echo esc_attr( sprintf( 'Отзывы на площадке %1$s, рейтинг %2$s', $widget['name'], $widget['score'] ) ); ?>">
+						<?php endif; ?>
 					</li>
 				<?php endforeach; ?>
 			</ul>
@@ -556,7 +462,12 @@ get_header();
 								<h3 class="kb-card__title"><?php echo esc_html( $item['title'] ); ?></h3>
 								<p class="kb-card__desc"><?php echo esc_html( $item['text'] ); ?></p>
 							</div>
-							<?php echo $kb_arrow; ?>
+							<span class="kb-card__arrow">
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+									<path d="M7 17 17 7"/>
+									<path d="M8 7h9v9"/>
+								</svg>
+							</span>
 						</a>
 					</li>
 				<?php endforeach; ?>
@@ -565,31 +476,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF:
-	 *   $gov_title / $gov_subtitle — поля секции;
-	 *   $gov_links — репитер. Ключи совпадают с тем, что отдаёт поле «Ссылка»
-	 *   (title / url / target), так что элемент можно передать в шаблон как есть.
-	 *   target пустой — ссылка открывается в той же вкладке; поставьте «_blank»
-	 *   в поле, если внешние сервисы должны открываться в новой.
-	 */
-	// \u{00AD} — мягкий перенос: на узком экране слово рвётся
-	// как в макете, «Государствен-ные», а на широком не виден.
-	$gov_title    = 'Государствен' . "\u{00AD}" . 'ные сервисы';
-	$gov_subtitle = 'Быстрые проверки статуса документов и ограничений — прямые ссылки на официальные сервисы.';
-
-	$gov_links = array(
-		array( 'title' => 'Готовность РВП',             'url' => '#', 'target' => '' ),
-		array( 'title' => 'Готовность ВНЖ',             'url' => '#', 'target' => '' ),
-		array( 'title' => 'Проверка патента',           'url' => '#', 'target' => '' ),
-		array( 'title' => 'Запись в Сахарово',          'url' => '#', 'target' => '' ),
-		array( 'title' => 'Запрет на въезд',            'url' => '#', 'target' => '' ),
-		array( 'title' => 'ИНН',                        'url' => '#', 'target' => '' ),
-		array( 'title' => 'ФССП',                       'url' => '#', 'target' => '' ),
-		array( 'title' => 'Исполнительные производства', 'url' => '#', 'target' => '' ),
-	);
-	?>
 	<section class="gov">
 		<div class="gov__inner">
 
@@ -603,7 +489,7 @@ get_header();
 					<li>
 						<a class="gov-link" href="<?php echo esc_url( $link['url'] ); ?>"
 							<?php if ( ! empty( $link['target'] ) ) : ?>
-								target="<?php echo esc_attr( $link['target'] ); ?>" rel="noopener"
+								target="_blank" rel="noopener"
 							<?php endif; ?>>
 							<span class="gov-link__label"><?php echo esc_html( $link['title'] ); ?></span>
 							<span class="gov-link__arrow">
@@ -620,37 +506,6 @@ get_header();
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF:
-	 *   $faq_title / $faq_subtitle — поля секции;
-	 *   $faq_items — репитер: question + answer;
-	 *   $faq_more  — поле «Ссылка» (title / url).
-	 *
-	 * ВНИМАНИЕ: текстов ответов в макете нет, ниже стоят заполнители.
-	 * Порядок в массиве = порядок чтения слева направо по рядам сетки.
-	 */
-	$faq_title    = 'Частые вопросы';
-	$faq_subtitle = 'Коротко о деньгах, сроках и документах. Полные разборы — в базе знаний.';
-
-	$faq_placeholder = '[Текст ответа — заполнитель, подставляется из ACF]';
-
-	$faq_items = array(
-		array( 'question' => 'Сколько стоят ваши услуги?',                  'answer' => $faq_placeholder ),
-		array( 'question' => 'Сколько времени занимает оформление?',        'answer' => $faq_placeholder ),
-		array( 'question' => 'Что будет, если придёт отказ?',               'answer' => $faq_placeholder ),
-		array( 'question' => 'Чем отличается РВП от ВНЖ — что оформлять?',  'answer' => $faq_placeholder ),
-		array( 'question' => 'Можно ли продлить РВП после 3 лет?',          'answer' => $faq_placeholder ),
-		array( 'question' => 'Как проверить готовность документов?',        'answer' => $faq_placeholder ),
-		array( 'question' => 'Нужно ли сдавать экзамен по русскому языку?', 'answer' => $faq_placeholder ),
-		array( 'question' => 'Нужно ли отказываться от прежнего гражданства?', 'answer' => $faq_placeholder ),
-	);
-
-	$faq_more = array(
-		'title' => 'Все вопросы и ответы',
-		'url'   => '#',
-	);
-	?>
 	<section class="faq">
 		<div class="faq__inner">
 
@@ -683,22 +538,10 @@ get_header();
 
 	<?php
 	/*
-	 * Точка подключения ACF:
-	 *   $cta_title / $cta_lead / $cta_note — поля секции;
-	 *   $cta_submit — подпись кнопки;
-	 *   $cta_consent_url — ссылка на политику конфиденциальности;
-	 *   $cta_pic — поле «Изображение».
-	 *
 	 * ВНИМАНИЕ: форма никуда не отправляется — action пустой, обработчика нет.
 	 * Подключать через CF7 / WPForms / собственный admin-post обработчик,
 	 * тогда же добавить nonce и защиту от спама.
 	 */
-	$cta_title       = "Не знаете,\nс чего начать?";
-	$cta_lead        = 'На консультации юрист определит ваше основание, назовёт сроки и список документов. Оставьте имя и телефон — перезвоним в рабочее время и запишем на ближайшее свободное окно.';
-	$cta_submit      = 'Записаться на консультацию';
-	$cta_consent_url = '#';
-	$cta_note        = "Перезваниваем Пн–Пт с 09:00 до 18:00.\nКонсультация 15 минут — бесплатно.";
-	$cta_pic         = get_template_directory_uri() . '/assets/images/cta.png';
 	?>
 	<section class="cta">
 		<div class="cta__inner">
@@ -727,61 +570,13 @@ get_header();
 				<p class="cta-form__note"><?php echo nl2br( esc_html( $cta_note ) ); ?></p>
 			</form>
 
-			<img class="cta__pic" src="<?php echo esc_url( $cta_pic ); ?>" alt="" width="610" height="340">
+			<?php if ( $cta_image ) : ?>
+				<img class="cta__pic" src="<?php echo esc_url( $cta_image ); ?>" alt="" width="610" height="340">
+			<?php endif; ?>
 
 		</div>
 	</section>
 
-	<?php
-	/*
-	 * Точка подключения ACF:
-	 *   $contacts_title / $contacts_subtitle — поля секции;
-	 *   $contacts_phone — группа: hours, number, chips (репитер: label, url, icon);
-	 *   $contacts_offices — репитер: name, tab, address, hours, route_url, map_embed.
-	 *
-	 * map_embed — URL для <iframe> конструктора Яндекс.Карт. Пока пусто,
-	 * на его месте рисуется пустая рамка нужных пропорций.
-	 */
-	$contacts_title    = 'Контакты';
-	$contacts_subtitle = 'Два офиса в Московской области. Отвечаем в мессенджерах в рабочие часы.';
-
-	$contacts_phone = array(
-		'title'  => 'Телефон и мессенджеры',
-		'hours'  => 'Пн–Пт, 09:00–18:00',
-		'number' => '+7 (495) 859-00-51',
-		'tel'    => '+74958590051',
-		'chips'  => array(
-			array( 'label' => 'MAX', 'url' => '#', 'icon' => 'max' ),
-			array( 'label' => 'Telegram', 'url' => '#', 'icon' => 'telegram' ),
-		),
-	);
-
-	$contacts_offices = array(
-		array(
-			'tab'       => 'Подольск',
-			'name'      => 'Офис в Подольске',
-			'address'   => "ул. Профсоюзная, 4\nМосковская область",
-			'hours'     => 'Пн–Пт: 09:00–18:00, Сб: 10:00–15:00',
-			'route'     => 'Маршрут в Подольск',
-			'route_url' => '#',
-			'map_embed' => '',
-		),
-		array(
-			'tab'       => 'Одинцово',
-			'name'      => 'Офис в Одинцово',
-			'address'   => "п. Новоивановское,\nул. Калинина, 8",
-			'hours'     => 'Пн–Пт: 09:00–18:00, Сб: 10:00–15:00',
-			'route'     => 'Маршрут в Одинцово',
-			'route_url' => '#',
-			'map_embed' => '',
-		),
-	);
-
-	$contacts_icons = array(
-		'max'      => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.13" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6"/><path d="M5.8 8h4.4"/></svg>',
-		'telegram' => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.13" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.5 2 1.8 6.9l3.5 1.3 1.3 3.6 2-2.6 3.1 2.3z"/><path d="m5.3 8.2 7-4.6"/></svg>',
-	);
-	?>
 	<section class="contacts">
 		<div class="contacts__inner">
 
